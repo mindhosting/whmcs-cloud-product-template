@@ -1,0 +1,67 @@
+version: '3'
+volumes: 
+  db:
+  web:
+networks: 
+  backend:
+  proxy: 
+    external: true
+services: 
+  db: 
+    deploy: 
+      replicas: 1
+      resources: 
+        limits: 
+          cpus: '1'
+          memory: 1024M
+      restart_policy: 
+        condition: on-failure
+        max_attempts: 5
+    environment: 
+      MYSQL_DATABASE: $USERNAME
+      MYSQL_PASSWORD: $PASSWORD
+      MYSQL_ROOT_PASSWORD: 20Mind.Engineering20
+      MYSQL_USER: $USERNAME
+      TZ: Africa/Tunis
+    image: mysql:5.7.29
+    networks: 
+      - backend
+    volumes: 
+      - db:/var/lib/mysql
+  web: 
+    image: mindhosting/moodle:latest
+    deploy: 
+      labels: 
+        - 'traefik.enable=true'
+        - 'traefik.http.routers.stack_name.rule=Host(`$DOMAIN_NAME`)'
+        - 'traefik.http.routers.stack_name.entrypoints=web'
+        - 'traefik.http.services.stack_name.loadbalancer.server.port=80'
+        - 'traefik.http.routers.stack_name-secured.rule=Host(`$DOMAIN_NAME`)'
+        - 'traefik.http.routers.stack_name-secured.entrypoints=web-secured'
+        - 'traefik.http.routers.stack_name-secured.tls.certresolver=mytlschallenge'
+      replicas: 1
+      resources: 
+        limits: 
+          cpus: '0.5'
+          memory: 256M
+      restart_policy: 
+        condition: on-failure
+        max_attempts: 5
+    environment: 
+      ADMIN_EMAIL: $EMAIL
+      ADMIN_PASSWORD: $PASSWORD
+      ADMIN_USERNAME: $USERNAME
+      FILEMANAGER_ROOT_PATH: /var/www/html
+      PHP_INPUT_VARS: 5000
+      PHP_MAX_EXECUTION_TIME: 300
+      PHP_MAX_FILESIZE: 64M
+      PHP_MEMORY_LIMIT: 256M
+      PHP_POST_MAX_SIZE: 128M
+      TZ: Africa/Tunis
+      VIRTUAL_HOST: $DOMAIN_NAME
+    hostname: $DOMAIN_NAME
+    networks: 
+      - proxy
+      - backend
+    volumes: 
+      - web:/var/www/html
