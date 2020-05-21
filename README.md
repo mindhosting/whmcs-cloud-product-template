@@ -1,0 +1,1 @@
+# whmcs-cloud-product-template
